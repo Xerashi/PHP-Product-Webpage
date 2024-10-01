@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!-- Date: 30/09/2024, Author(s): Jonathan Ecker, Subjecty: Code for Draivi Backend Test -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Draivi Test Site</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body>
+    <h1>Alko Store List</h1>
+    <button id="load-items">List</button>
+    <button id="clear-items">Empty</button>
+    <table id="items-container">
+        <tr>
+            <th>Number</th>
+            <th>Name</th>
+            <th>Bottle Size</th>
+            <th>Price (EUR)</th>
+            <th>Price (GBP)</th>
+            <th>Order Amount</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr ></tr>
+
+    </table>
+
+    <script>
+        $(document).ready(function() {
+            //Provides functionality for the List button at the top of the page.
+            $('#load-items').on('click', function() {
+                $.ajax({
+                    url: 'fetch.php', //Name of the PHP script for fetching entries from the MySQL database, limited to 100 results at the moment. 
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        // Clear the items container and re-add the labels that are present when the page is first loaded.
+                        $('#items-container').empty();
+                        $('#items-container').append('<tr><th>Number</th><th>Name</th><th>Bottle Size</th><th>Price (EUR)</th><th>Price (GBP)</th><th>Order Amount</th><td></td><td></td></tr>');
+
+                        //Using the data result from the PHP script, populates rows with product information and 2 dynamic buttons.
+                        $.each(data, function(index, item) {
+                            $('#items-container').append('<tr><td>' + item.number + '</td><td>' + item.name + '</td><td>' + item.bottlesize + '</td><td>' + item.price + '</td><td>' + item.priceGBP + '</td><td>' + item.orderamount + '</td><td><button class=add-order>Add</button></td><td><button class=clear-order>Clear</button></td></tr>');
+                        });
+                    },
+                    //Logs an error to console if there is a problem fetching database entries.
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error: " + status + error);
+                    }
+                });
+            });
+            //Provides functionality for the Clear button at the top of the page.
+            $('#clear-items').on('click', function() {
+                $.ajax({
+                    success: function() {
+                        // Clear the items container and re-add the labels that are present when the page is first loaded.
+                        $('#items-container').empty();
+                        $('#items-container').append('<tr><td>Number</td><td>Name</td><td>Bottle Size</td><td>Price (EUR)</td><td>Price (GBP)</td><td>Order Amount</td></tr>');
+                    }
+                });
+            });
+            //Provides functionality for the dynamic "Add" button that exists for each product, increases the orders by 1 each time.
+            $('#items-container').on('click', '.add-order', function() {
+                //Grabs the row the button was pressed, as well as the product number and current order amount.
+                var row = $(this).closest('tr');
+                var number = row.find('td:eq(0)').text();
+                var order = row.find('td:eq(5)').text();
+                $.ajax({
+                    url: 'add.php', //Name of the PHP script for adding orders dynamically to the database. 
+                    type: 'POST',
+                    data: { number:number, order: order },
+                    success: function(response) {
+                        row.find('td:eq(5)').text(response); /* Finds the 6th item in the table in this case "Order Amount" and changes the text to POST response value */
+                    },
+                    //Logs an error to console if there is a problem updating the order amount.
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error: " + status + error);
+                    }
+                });
+            });
+            $('#items-container').on('click', '.clear-order', function() {
+                var row = $(this).closest('tr');
+                var number = row.find('td:eq(0)').text();
+                var order = row.find('td:eq(5)').text();
+                $.ajax({
+                    url: 'clear.php', //Name of the PHP script for clearing orders dynamically to the database. 
+                    type: 'POST',
+                    data: { number:number, order: order },
+                    success: function(response) {
+                        row.find('td:eq(5)').text(response); /* Finds the 6th item in the table in this case "Order Amount" and changes the text to POST response value */
+                    },
+                    //Logs an error to console if there is a problem updating the order amount.
+                    error: function(xhr, status, error) {
+                        console.error("AJAX Error: " + status + error);
+                    }
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>
